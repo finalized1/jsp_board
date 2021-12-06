@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL"/>
+	</settings>
+  <environments default="development">
+    <environment id="development">
+    <!-- MANAGED : 컨테이너가 트랜잭션을 관리 -->
+      <transactionManager type="MANAGED"/>
+      <!-- 데이터 소스 환경 -->
+      <!-- UNPOOLED : 컨넥션 풀을 사용하지 않겠다. -->
+      <!-- POOLED : 컨넥션 풀을 사용하겠다. -->
+      <dataSource type="POOLED">
+        <property name="driver" value="oracle.jdbc.driver.OracleDriver"/>
+        <property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/>
+        <property name="username" value="hr"/>
+        <property name="password" value="hr"/>
+      </dataSource>
+    </environment>
+  </environments>
+  <!-- 매퍼파일들 매핑 -->
+   <mappers>
+    <mapper resource="mybatis/BoardMapper.xml"/>
+    <mapper resource="mybatis/BoardFileMapper.xml"/>
+    <mapper resource="mybatis/MemberMapper.xml"/>
+  </mappers>
+</configuration>

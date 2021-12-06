@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardMapper">
+	<!-- Board의 bnum필드에 b_seq.nextval을 구해서 set -->
+	<insert id="insert" parameterType="dto.Board">
+		<selectKey keyProperty="bnum" resultType="int" order="BEFORE"> 
+			SELECT B_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		<if test="relevel==0">
+			<!-- 원본추가 : REF(그룹번호)는 BNUM과 같다-->
+			INSERT INTO BOARD (BNUM, EMAIL, SUBJECT, CONTENT, IP, REF)
+			VALUES (#{bnum}, #{email}, #{subject}, #{content}, #{ip}, #{bnum})
+		</if>
+		<if test="relevel!=0">
+			<!-- 댓글추가 -->
+			INSERT INTO BOARD (BNUM, EMAIL, SUBJECT, CONTENT, IP, REF, RESTEP, RELEVEL)
+			VALUES (#{bnum}, #{email}, #{subject}, #{content}, #{ip}, #{ref}, #{restep}, #{relevel})
+		</if>
+		
+	</insert>
+	
+	<update id="update">
+		UPDATE BOARD
+		SET EMAIL = #{email},
+		SUBJECT = #{subject},
+		CONTENT = #{content},
+		IP = #{ip},
+		MODIDATE = SYSDATE
+		WHERE BNUM = #{bnum}
+	</update>
+	
+	<!-- 조회수+1 -->
+	<update id="update_readcntplus">
+		UPDATE BOARD
+		SET READCNT = READCNT+1
+		WHERE BNUM = #{bnum}
+	</update>
+	
+	<update id="update_restepplus">
+		UPDATE BOARD
+		SET RESTEP = RESTEP + 1
+		WHERE REF = #{ref}
+		AND RESTEP >= #{restep}
+	</update>
+	
+	<delete id="delete">
+		DELETE FROM BOARD
+		WHERE BNUM = #{bnum}
+	</delete>
+	
+	<select id="selectOne" resultType="dto.Board">
+		SELECT * FROM BOARD
+		WHERE BNUM = #{bnum}
+	</select>
+	<!-- 조회조건 sql문 -->
+	<sql id="findsql">
+		WHERE 1=1
+		<if test="findkey=='email'">
+			AND EMAIL LIKE '%' || #{findvalue} || '%'
+		</if>
+		<if test="findkey=='subject'">
+			AND SUBJECT LIKE '%' || #{findvalue} || '%' 
+		</if>
+		<if test="findkey=='content'">
+			AND CONTENT LIKE '%' || #{findvalue} || '%' 
+		</if>
+		<if test="findkey =='subcon'">
+			AND SUBJECT LIKE '%' || #{findvalue} || '%'
+			   OR CONTENT LIKE '%' || #{findvalue} || '%'
+		</if>
+		AND RELEVEL = 0 <!-- 원본만 조회 -->
+	</sql>
+	
+	<!-- include : 참조할 id를 지정 -->
+	<select id="selectList" resultType="dto.Board">
+		SELECT * 
+		FROM(SELECT ROWNUM RNUM, B.*
+         		FROM (SELECT *FROM BOARD
+         			<include refid="findsql"/>
+            			ORDER BY BNUM DESC) B)
+		WHERE RNUM BETWEEN #{startnum} AND #{endnum}
+	</select>
+	<!-- 전체게시물 수 -->
+	<select id="select_totcnt" resultType="int">
+		SELECT COUNT(*) TOTCNT
+		FROM BOARD
+		<include refid="findsql"/>
+	</select>
+	
+	<!-- 댓글조회 -->
+	<select id="select_reply" resultType="dto.Board">
+		SELECT * FROM BOARD
+		WHERE RELEVEL != 0
+		AND REF = #{ref}
+		ORDER BY RESTEP
+	</select>
+</mapper>
